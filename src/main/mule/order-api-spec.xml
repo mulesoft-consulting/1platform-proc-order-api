@@ -228,10 +228,10 @@ attributes.queryParams.customerId]]></ee:set-variable>
 		</ee:transform>
 		<scatter-gather doc:name="Scatter-Gather" doc:id="2698fb39-93ca-4cfe-b571-38e65ed750a1" >
 			<route >
-				<order-apifor-comm-dix-my-sql:get-orders doc:name="Get CommDix orders" doc:id="cc9255eb-af95-4653-8dae-d1a318c9ec7d" customer-id="#[vars.customerId]"/>
+				<order-apifor-comm-dix-my-sql:get-orders doc:name="Get CommDix orders" doc:id="cc9255eb-af95-4653-8dae-d1a318c9ec7d" customer-id="#[vars.customerId]" config-ref="Order_API_for_CommDix_MySQL_Config"/>
 			</route>
 			<route >
-				<order-sapapi:get-orders doc:name="Get SAP orders" doc:id="7d983a74-a5bf-4904-9525-6776bbce141b" customer-id="#[vars.customerId]"/>
+				<order-sapapi:get-orders doc:name="Get SAP orders" doc:id="7d983a74-a5bf-4904-9525-6776bbce141b" customer-id="#[vars.customerId]" config-ref="Order_SAP_API_Config"/>
 			</route>
 		</scatter-gather>
 		<ee:transform doc:name="Transform Message" doc:id="5d19a533-1b3a-4548-bfa4-499281fa7555" >
@@ -342,6 +342,6 @@ else
 		</ee:transform>
     </flow>
     <flow name="post:\orders:application\json:order-api-spec-config">
-        <order-sapapi:post doc:name="Create Order in SAP" doc:id="a1afe7f6-0cdd-4c68-a719-0c01cac2caf5" />
+        <order-sapapi:post doc:name="Create Order in SAP" doc:id="a1afe7f6-0cdd-4c68-a719-0c01cac2caf5" config-ref="Order_SAP_API_Config"/>
     </flow>
 </mule>
