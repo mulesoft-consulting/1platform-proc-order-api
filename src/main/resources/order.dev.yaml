@@ -1,0 +1,12 @@
+api:
+  id: "15523425"
+sap:
+  host: ".cloudhub.io"
+  port: "80"
+  basePath: "/"
+  protocol: "HTTP"
+commdix:
+  host: ".cloudhub.io"
+  port: "80"
+  basePath: "/"
+  protocol: "HTTP"
