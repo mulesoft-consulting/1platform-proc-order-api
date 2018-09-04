@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" 
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" 
 xmlns:order-sapapi="http://www.mulesoft.org/schema/mule/order-sapapi"
 xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:order-apifor-comm-dix-my-sql="http://www.mulesoft.org/schema/mule/order-apifor-comm-dix-my-sql" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
@@ -14,10 +15,15 @@ http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/m
 	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="0b1f0d71-ea48-43aa-808d-586cd27f6586" file="order.${env}.secured.yaml" key="${key}" >
 		<secure-properties:encrypt algorithm="Blowfish" />
 	</secure-properties:config>
-	
+
     <http:listener-config name="order-api-spec-httpListenerConfig">
-        <http:listener-connection host="0.0.0.0" port="8081" />
-    </http:listener-config>
+        <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS">
+            <tls:context>
+                <tls:key-store type="jks" path="keystore.jks" keyPassword="${secure::keystore.password}" password="${secure::keystore.password}" />
+            </tls:context>
+        </http:listener-connection>
+    </http:listener-config>	
+
     <apikit:config name="order-api-spec-config" raml="order-api-spec.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <order-apifor-comm-dix-my-sql:config name="Order_API_for_CommDix_MySQL_Config" doc:name="Order API for CommDix MySQL Config" doc:id="bcb83043-1fa2-42f5-898d-f0d9d80f0012" property_host="${commdix.host}" property_port="${commdix.port}" property_basePath="${commdix.basePath}" property_protocol="${commdix.protocol}" property_client-id="${secure::commdix.clientId}" property_client-secret="${secure::commdix.clientSecret}" />
 	<order-sapapi:config name="Order_SAP_API_Config" doc:name="Order SAP API Config" doc:id="ef8df3b9-dede-44e9-9764-3bed2eff2ee7" property_host="${sap.host}" property_port="${sap.port}" property_basePath="${sap.basePath}" property_protocol="${sap.protocol}" property_client-id="${secure::sap.clientId}" property_client-secret="${secure::sap.clientSecret}" />
@@ -181,7 +187,9 @@ output application/java
                 <ee:set-variable variableName="id"><![CDATA[attributes.uriParams.id]]></ee:set-variable>
             </ee:variables>
         </ee:transform>
-		<ee:transform doc:name="Not implemented response" doc:id="454b01de-f983-4ee2-aea3-da9de55c13a3" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
+		<ee:transform doc:name="Not implemented response" doc:id="454b01de-f983-4ee2-aea3-da9de55c13a3" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
