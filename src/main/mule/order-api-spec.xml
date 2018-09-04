@@ -1,20 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
-	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" 
 xmlns:order-sapapi="http://www.mulesoft.org/schema/mule/order-sapapi"
-xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:order-apifor-comm-dix-my-sql="http://www.mulesoft.org/schema/mule/order-apifor-comm-dix-my-sql" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+xmlns:order-apifor-comm-dix-my-sql="http://www.mulesoft.org/schema/mule/order-apifor-comm-dix-my-sql" 
+xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" 
+xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" 
+xmlns="http://www.mulesoft.org/schema/mule/core" 
+xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" 
+xmlns:http="http://www.mulesoft.org/schema/mule/http" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/order-apifor-comm-dix-my-sql http://www.mulesoft.org/schema/mule/order-apifor-comm-dix-my-sql/current/mule-order-apifor-comm-dix-my-sql.xsd
 http://www.mulesoft.org/schema/mule/order-sapapi http://www.mulesoft.org/schema/mule/order-sapapi/current/mule-order-sapapi.xsd
-http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
-http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
-
-	<global-property doc:name="Global Property" name="env" value="dev" />
-	<global-property doc:name="Global Property" name="key" value="Mule1379" />
-	<configuration-properties doc:name="Configuration properties" doc:id="9eb8a225-0b39-4dd5-972d-3c2c4c6a8a95" file="order.${env}.yaml" />
-	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="0b1f0d71-ea48-43aa-808d-586cd27f6586" file="order.${env}.secured.yaml" key="${key}" >
-		<secure-properties:encrypt algorithm="Blowfish" />
-	</secure-properties:config>
+">
 
     <http:listener-config name="order-api-spec-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS">
@@ -27,7 +25,6 @@ http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/m
     <apikit:config name="order-api-spec-config" raml="order-api-spec.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <order-apifor-comm-dix-my-sql:config name="Order_API_for_CommDix_MySQL_Config" doc:name="Order API for CommDix MySQL Config" doc:id="bcb83043-1fa2-42f5-898d-f0d9d80f0012" property_host="${commdix.host}" property_port="${commdix.port}" property_basePath="${commdix.basePath}" property_protocol="${commdix.protocol}" property_client-id="${secure::commdix.clientId}" property_client-secret="${secure::commdix.clientSecret}" />
 	<order-sapapi:config name="Order_SAP_API_Config" doc:name="Order SAP API Config" doc:id="ef8df3b9-dede-44e9-9764-3bed2eff2ee7" property_host="${sap.host}" property_port="${sap.port}" property_basePath="${sap.basePath}" property_protocol="${sap.protocol}" property_client-id="${secure::sap.clientId}" property_client-secret="${secure::sap.clientSecret}" />
-	<api-gateway:autodiscovery apiId="${api.id}" doc:name="API Autodiscovery" doc:id="40d28318-9783-4f05-b078-27195f2eb821" flowRef="order-api-spec-main" />
 	<flow name="order-api-spec-main">
         <http:listener config-ref="order-api-spec-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -245,20 +242,30 @@ attributes.queryParams.customerId]]></ee:set-variable>
 		<ee:transform doc:name="Transform Message" doc:id="5d19a533-1b3a-4548-bfa4-499281fa7555" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
-
-var orders = payload."0".payload ++ payload."1".payload
-var grupedOrders = (orders groupBy$.id) pluck $
----
-grupedOrders map ((item, index) -> 
-    if(sizeOf(item) > 1)  
-        item[0] - "orderItems" - "sourceSystem" ++ {
-		orderItems: flatten(item.*orderItems),
-		sourceSystem: item.*sourceSystem joinBy ", "
-	}
+output application/json
+var orders = (payload."0".payload.orders default []) ++ (payload."1".payload.orders default [])
+var grupedOrders = (orders groupBy ($.orderId as Number)) pluck $
+var mergedOrders = grupedOrders map
+((orderPack, index) -> 
+    if(sizeOf(orderPack) > 1)  
+        {
+        		orderId: orderPack[0].orderId as Number as String {format: "0000000000"},
+			orderItems: flatten(orderPack.*orderItems),
+			sourceSystem: orderPack.*sourceSystem joinBy ", "
+		} ++ (orderPack[0] - "orderId"- "orderItems" - "sourceSystem") 
     else 
-        item[0]
-)]]></ee:set-payload>
+    		{ orderId: orderPack[0].orderId as Number as String {format: "0000000000"} }
+        ++ (orderPack[0] - "orderId")
+        
+)
+---
+{
+	meta: {
+		totalItems: sizeOf( mergedOrders ),
+		pagingOffset: 0
+	},
+	orders:  mergedOrders 
+}]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
     </flow>
@@ -271,7 +278,7 @@ grupedOrders map ((item, index) ->
         <scatter-gather doc:name="Scatter-Gather" doc:id="d22c3766-6655-410d-847a-8f977a060b68" >
 			<route >
 				<try doc:name="Try" doc:id="ae90d481-1cfa-45ee-9584-fc0c07c3b67d" >
-					<order-apifor-comm-dix-my-sql:get doc:name="Get CommDix Order" doc:id="221e338f-2b97-49ce-8855-33a08c089a33" config-ref="Order_API_for_CommDix_MySQL_Config" id="#[vars.id]" />
+					<order-apifor-comm-dix-my-sql:get doc:name="Get CommDix Order" doc:id="221e338f-2b97-49ce-8855-33a08c089a33" config-ref="Order_API_for_CommDix_MySQL_Config" id="#[vars.id as Number]" />
 					<error-handler >
 						<on-error-continue enableNotifications="false" logException="false" doc:name="On Error Continue" doc:id="9dd401a2-88a4-40e2-9836-c1467b974935" type="ORDER-APIFOR-COMM-DIX-MY-SQL:NOT_FOUND">
 							<ee:transform doc:name="Set Not Found" doc:id="ce9847d3-d725-414b-9016-04a1a1cf352f" >
