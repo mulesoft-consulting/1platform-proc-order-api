@@ -1,1 +1,4 @@
-{"minMuleVersion":"4.1.3"}
+{  
+"secureProperties": ["sap.clientId", "sap.clientSecret", "commdix.clientId", "commdix.clientSecret", "keystore.password"],
+"minMuleVersion":"4.1.3"
+}
