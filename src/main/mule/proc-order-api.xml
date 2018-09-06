@@ -301,7 +301,6 @@ output application/json
 var hasCommDixOrder = not (vars.commDixNotFound default false)
 var hasSapOrder = not (vars.sapNotFound default false)
 
-
 var mainOrder = if(hasCommDixOrder) payload."0".payload 
 	else if(hasSapOrder) payload."1".payload 
 	else null
@@ -331,11 +330,14 @@ else
 			<ee:variables >
 				<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
 output application/java
+var hasCommDixOrder = not (vars.commDixNotFound default false)
+var hasSapOrder = not (vars.sapNotFound default false)
+
 ---
-if((vars.sapNotFound default false) or (vars.commDixNotFound default false))
-	401
+if(hasCommDixOrder or hasSapOrder)
+	200
 else
-	200]]></ee:set-variable>
+	401]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<logger level="INFO" doc:name="G" doc:id="d2aa301e-81b8-4257-9e6a-a0c60687dc4e" message="g"/>
