@@ -9,7 +9,7 @@
 http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
 
 	<global-property doc:name="Global Property" name="env"
-		value="prod" />
+		value="dev" />
 	<global-property doc:name="Global Property" name="key"
 		value="Mule1379" />
 	<configuration-properties doc:name="Configuration properties"

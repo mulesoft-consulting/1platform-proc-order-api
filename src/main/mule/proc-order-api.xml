@@ -17,7 +17,7 @@ http://www.mulesoft.org/schema/mule/order-sapapi http://www.mulesoft.org/schema/
     <http:listener-config name="order-api-spec-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS">
             <tls:context>
-                <tls:key-store type="jks" path="keystore.jks" keyPassword="${secure::keystore.password}" password="${secure::keystore.password}" />
+                <tls:key-store alias="localhost" type="jks" path="localhost.jks" keyPassword="${secure::keystore.password}" password="${secure::keystore.password}" />
             </tls:context>
         </http:listener-connection>
     </http:listener-config>	
@@ -38,7 +38,7 @@ http://www.mulesoft.org/schema/mule/order-sapapi http://www.mulesoft.org/schema/
         <apikit:router config-ref="order-api-spec-config" />
         <error-handler>
             <on-error-propagate type="APIKIT:BAD_REQUEST">
-                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="13381e96-d37c-4ea9-b1cb-e5ee6f62e38a">
                     <ee:message>
                         <ee:set-payload><![CDATA[%dw 2.0
 output application/json
@@ -46,7 +46,7 @@ output application/json
 {message: "Bad request"}]]></ee:set-payload>
                     </ee:message>
                     <ee:variables>
-                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
                     </ee:variables>
                 </ee:transform>
             </on-error-propagate>
@@ -387,6 +387,87 @@ true]]></ee:set-variable>
 		</error-handler>
 	</flow>
 	<flow name="post:\orders:application\json:order-api-spec-config">
-        <order-sapapi:post doc:name="Create Order in SAP" doc:id="a1afe7f6-0cdd-4c68-a719-0c01cac2caf5" config-ref="Order_SAP_API_Config"/>
+        <ee:transform doc:name="Items by System" doc:id="01c052d6-0181-4a2f-938c-c58eb2a68a38" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="systems" ><![CDATA[%dw 2.0
+output application/json
+var commDixIds:Array<String> = lookup("get-commdix-product-ids", null) as Array<String>
+var sapItems = payload[0].orderItems filter (item,i) -> not (commDixIds contains item.product.id)
+var commdixItems = payload[0].orderItems filter (item,i) -> (commDixIds contains item.product.id)
+---
+{
+	sap: sapItems,
+	commdix: commdixItems,
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Has SAP items" doc:id="91f4a150-1442-4f85-978a-d7d334eed212" >
+			<when expression="#[sizeOf(vars.systems.sap) &gt; 0]" >
+				<ee:transform doc:name="Create SAP requests" doc:id="7ce3c99d-771d-409d-8774-42ac1271209c">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="sapRequest"><![CDATA[%dw 2.0
+output application/json
+---
+[
+	(payload[0] - "orderItems") ++ {
+		orderItems: vars.systems.sap
+	}
+]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<order-sapapi:post doc:name="Create Order in SAP" doc:id="a1afe7f6-0cdd-4c68-a719-0c01cac2caf5" config-ref="Order_SAP_API_Config" target="sapResponse">
+			<order-sapapi:post-request-data><![CDATA[#[vars.sapRequest]]]></order-sapapi:post-request-data>
+		</order-sapapi:post>
+			</when>
+			<otherwise >
+				<logger level="DEBUG" doc:name="Not Creating Order in SAP" doc:id="d92a0af7-b152-4429-99af-850e09513b38" message="Not Creating Order in SAP" category="app"/>
+			</otherwise>
+		</choice>
+		<choice doc:name="Has CommDix items" doc:id="ef9b8802-a153-4db6-be77-a14cce2c47dd" >
+			<when expression="#[sizeOf(vars.systems.commdix) &gt; 0]" >
+				<ee:transform doc:name="Create CommDix Request" doc:id="57a7ec44-4693-40d9-bbb7-807ec3f947ff">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[
+	(payload[0] - "orderItems" - "orderId" ) ++ {
+		(orderId: vars.sapResponse.messages[0].itemId) if (vars.sapResponse.messages[0].itemId?),
+		orderItems: vars.systems.commdix
+	}
+]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<order-apifor-comm-dix-my-sql:post doc:name="Create Order in CommDix" doc:id="f6cccf45-ad49-4516-a844-1cc9eaa75a44" config-ref="Order_API_for_CommDix_MySQL_Config" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="58e2802c-4b17-4026-9eb7-62db7051b03a" message="Not Creating Order in CommDix" category="app"/>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="1c0ab68b-401d-45d7-89dd-f5344be2150c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+if (vars.sapResponse.messages[0].itemId?)
+	vars.sapResponse
+else
+	payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
     </flow>
+	<flow name="get-commdix-product-ids" doc:id="2b559d9a-b05d-4676-abdd-da0ddb48e1b0" >
+		<ee:transform doc:name="CommDix IDs" doc:id="35b9155f-093b-4239-ac14-03616869824e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+["502101","502102"]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
 </mule>
