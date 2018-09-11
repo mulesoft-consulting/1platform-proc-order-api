@@ -37,7 +37,7 @@ describe `Order API - Creation and retrieve test` in [
     "body":
       [{"customerId": "$(customer_email)","status": "Completed","billingAddress": {"addressId": "addr1","type": "Home","addressLines": ["154 Douglas Fir Dr"],"city": "Waleska","state": "GA","postalCode": "30183","countryCode": "USA"},"deliveryAddress": {"addressId": "addr1","type": "Home","addressLines": ["154 Douglas Fir Dr"],"city": "Waleska","state": "GA","postalCode": "30183","countryCode": "USA"},"deliveryStatus": "Processing","currency": {"code": "USD"},"subTotal": 100,"shippingCost": 20,"taxAmount": 6,"totalAmount": 126,"payments": [{"id": "p1","dateTime": "2018-08-18T12:13:14Z","amount": 126}],
       "orderItems": [{"orderLine": 0,
-        "product": {"id": "1004100","name": "Men’s Thunder Jacket"},"location": {"type": "Store","id": "s1"},"delivery": {"method": "Shipment","shipment": {"date": "2018-08-18","carrier": "FedEx","trackingNumber": "t123455"}},"quantity": {"ordered": 1},"pricing": {"itemAmount": 20,"totalAmount": 20}}
+        "product": {"id": "1004100-1","name": "Men’s Thunder Jacket"},"location": {"type": "Store","id": "s1"},"delivery": {"method": "Shipment","shipment": {"date": "2018-08-18","carrier": "FedEx","trackingNumber": "t123455"}},"quantity": {"ordered": 1},"pricing": {"itemAmount": 20,"totalAmount": 20}}
       ]}]
     }
   assert [
@@ -74,7 +74,7 @@ describe `Order API - Creation and retrieve test` in [
       [{"customerId": "$(customer_email)","status": "Completed","billingAddress": {"addressId": "addr1","type": "Home","addressLines": ["154 Douglas Fir Dr"],"city": "Waleska","state": "GA","postalCode": "30183","countryCode": "USA"},"deliveryAddress": {"addressId": "addr1","type": "Home","addressLines": ["154 Douglas Fir Dr"],"city": "Waleska","state": "GA","postalCode": "30183","countryCode": "USA"},"deliveryStatus": "Processing","currency": {"code": "USD"},"subTotal": 100,"shippingCost": 20,"taxAmount": 6,"totalAmount": 126,"payments": [{"id": "p1","dateTime": "2018-08-18T12:13:14Z","amount": 126}],
       "orderItems": [
         {"orderLine": 0,
-          "product": {"id": "1004100","name": "Men’s Thunder Jacket"},"location": {"type": "Store","id": "s1"},"delivery": {"method": "Shipment","shipment": {"date": "2018-08-18","carrier": "FedEx","trackingNumber": "t123455"}},"quantity": {"ordered": 1},"pricing": {"itemAmount": 20,"totalAmount": 20}},
+          "product": {"id": "1004100-1","name": "Men’s Thunder Jacket"},"location": {"type": "Store","id": "s1"},"delivery": {"method": "Shipment","shipment": {"date": "2018-08-18","carrier": "FedEx","trackingNumber": "t123455"}},"quantity": {"ordered": 1},"pricing": {"itemAmount": 20,"totalAmount": 20}},
         {"orderLine": 0,
           "product": {"id": "502101","name": "Alpine product"},"location": {"type": "Store","id": "s1"},"delivery": {"method": "Pickup","pickup": {"date": "2018-08-18","authorizedPeople": [{"firstName": "Brett","lastName": "Roeder","phoneNumber": "415-030-2033"}]}},"quantity": {"ordered": 4},"pricing": {"itemAmount": 20,"totalAmount": 20}}
       ]}]
