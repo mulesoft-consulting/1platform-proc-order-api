@@ -12,6 +12,7 @@ http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/m
 		value="dev" />
 	<global-property doc:name="Global Property" name="key"
 		value="Mule1379" />
+	<configuration doc:name="HTTP Configuration" defaultResponseTimeout="60000" />
 	<configuration-properties doc:name="Configuration properties"
 		doc:id="9eb8a225-0b39-4dd5-972d-3c2c4c6a8a95" file="order.${env}.yaml" />
 	<secure-properties:config name="Secure_Properties_Config"

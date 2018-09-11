@@ -292,7 +292,7 @@ var mergedOrders = grupedOrders map
 				</on-error-continue>
 			</error-handler>
 		</try>
-		<logger level="INFO" doc:name="F" doc:id="3360e08a-33e5-406c-927b-a7dd25a3ab19" message="f"/>
+		<logger level="INFO" doc:name="F" doc:id="3360e08a-33e5-406c-927b-a7dd25a3ab19"/>
 		<ee:transform doc:name="Create Response" doc:id="13d145a5-fe70-4a5f-9e54-cdc43198e87e" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -350,7 +350,7 @@ else
 							<ee:transform doc:name="Set Not Found" doc:id="ce9847d3-d725-414b-9016-04a1a1cf352f">
 								<ee:message>
 						<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
+output application/json
 ---
 ""]]></ee:set-payload>
 								</ee:message>
@@ -361,6 +361,7 @@ output application/java
 true]]></ee:set-variable>
 								</ee:variables>
 							</ee:transform>
+				<logger level="INFO" doc:name="commdix error" doc:id="65f800b1-71a9-4d92-a589-976b323d1cdc" message="commdix error"/>
 						</on-error-continue>
 		</error-handler>
 	</flow>
@@ -372,7 +373,7 @@ true]]></ee:set-variable>
 							<ee:transform doc:name="Set Not Found" doc:id="c55f1e00-f6df-4789-bef5-122a24eff4ec">
 								<ee:message>
 						<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
+output application/json
 ---
 ""]]></ee:set-payload>
 								</ee:message>
@@ -383,6 +384,7 @@ output application/java
 true]]></ee:set-variable>
 								</ee:variables>
 							</ee:transform>
+				<logger level="INFO" doc:name="sap error" doc:id="a0cf8941-6c82-449a-b840-e929cb59f73d" message="sap error"/>
 						</on-error-continue>
 		</error-handler>
 	</flow>

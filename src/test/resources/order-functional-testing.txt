@@ -1,0 +1,129 @@
+import * from bat::BDD
+import * from bat::Assertions
+
+var context = bat::Mutable::HashMap() // <--- First, the HashMap
+var app_client_id = 'abc'
+var app_client_secret = '123'
+var customer_email = 'test_user'
+var api_endpoint = 'https://qa-nto-proc-order-api.us-e2.cloudhub.io/api'
+fun header() = {
+      "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "client_id":"$(app_client_id)",
+            "client_secret":"$(app_client_secret)"
+          }
+    }
+---
+describe `Order API - Creation and retrieve test` in [
+  /* Test GET customer orders */
+  GET `$(api_endpoint)/orders?customerId=$(customer_email)`
+  with {
+    headers: header().headers
+  }
+  assert [
+    $.response.status mustEqual 200, // <--- Then a status assertion
+    $.response.mime mustEqual "application/json", // <--- And a MIME type assertion
+    $.response.body.meta.totalItems?,
+    $.response.body.meta.totalItems == sizeOf($.response.body.orders)
+  ] execute [
+    context.set('ordersAmount', $.response.body.meta.totalItems),
+    log($.response)
+  ],
+  /* Test Order CREATE with SAP products */
+  POST `$(api_endpoint)/orders`
+  with {
+    headers: header().headers,
+    "body":
+      [{"customerId": "$(customer_email)","status": "Completed","billingAddress": {"addressId": "addr1","type": "Home","addressLines": ["154 Douglas Fir Dr"],"city": "Waleska","state": "GA","postalCode": "30183","countryCode": "USA"},"deliveryAddress": {"addressId": "addr1","type": "Home","addressLines": ["154 Douglas Fir Dr"],"city": "Waleska","state": "GA","postalCode": "30183","countryCode": "USA"},"deliveryStatus": "Processing","currency": {"code": "USD"},"subTotal": 100,"shippingCost": 20,"taxAmount": 6,"totalAmount": 126,"payments": [{"id": "p1","dateTime": "2018-08-18T12:13:14Z","amount": 126}],
+      "orderItems": [{"orderLine": 0,
+        "product": {"id": "1004100","name": "Men’s Thunder Jacket"},"location": {"type": "Store","id": "s1"},"delivery": {"method": "Shipment","shipment": {"date": "2018-08-18","carrier": "FedEx","trackingNumber": "t123455"}},"quantity": {"ordered": 1},"pricing": {"itemAmount": 20,"totalAmount": 20}}
+      ]}]
+    }
+  assert [
+    $.response.status mustEqual 201, // <--- Then a status assertion
+    $.response.mime mustEqual "application/json", // <--- And a MIME type assertion
+    $.response.body.messages[0].itemId?
+  ] execute [
+    context.set('sap-order-id', $.response.body.messages[0].itemId),
+    log($.response)
+  ],
+  /* Test Order CREATE with CommDix products */
+  POST `$(api_endpoint)/orders`
+  with {
+    headers: header().headers,
+    "body":
+      [{"customerId": "$(customer_email)","status": "Completed","billingAddress": {"addressId": "addr1","type": "Home","addressLines": ["154 Douglas Fir Dr"],"city": "Waleska","state": "GA","postalCode": "30183","countryCode": "USA"},"deliveryAddress": {"addressId": "addr1","type": "Home","addressLines": ["154 Douglas Fir Dr"],"city": "Waleska","state": "GA","postalCode": "30183","countryCode": "USA"},"deliveryStatus": "Processing","currency": {"code": "USD"},"subTotal": 100,"shippingCost": 20,"taxAmount": 6,"totalAmount": 126,"payments": [{"id": "p1","dateTime": "2018-08-18T12:13:14Z","amount": 126}],
+      "orderItems": [{"orderLine": 0,
+        "product": {"id": "502101","name": "Alpine product"},"location": {"type": "Store","id": "s1"},"delivery": {"method": "Pickup","pickup": {"date": "2018-08-18","authorizedPeople": [{"firstName": "Brett","lastName": "Roeder","phoneNumber": "415-030-2033"}]}},"quantity": {"ordered": 4},"pricing": {"itemAmount": 20,"totalAmount": 20}}
+      ]}]
+    }
+  assert [
+    $.response.status mustEqual 201, // <--- Then a status assertion
+    $.response.mime mustEqual "application/json", // <--- And a MIME type assertion
+    $.response.body.messages[0].itemId?
+  ] execute [
+    context.set('commdix-order-id', $.response.body.messages[0].itemId),
+    log($.response)
+  ],
+  /* Test Order CREATE with SAP and CommDix products */
+  POST `$(api_endpoint)/orders`
+  with {
+    headers: header().headers,
+    "body":
+      [{"customerId": "$(customer_email)","status": "Completed","billingAddress": {"addressId": "addr1","type": "Home","addressLines": ["154 Douglas Fir Dr"],"city": "Waleska","state": "GA","postalCode": "30183","countryCode": "USA"},"deliveryAddress": {"addressId": "addr1","type": "Home","addressLines": ["154 Douglas Fir Dr"],"city": "Waleska","state": "GA","postalCode": "30183","countryCode": "USA"},"deliveryStatus": "Processing","currency": {"code": "USD"},"subTotal": 100,"shippingCost": 20,"taxAmount": 6,"totalAmount": 126,"payments": [{"id": "p1","dateTime": "2018-08-18T12:13:14Z","amount": 126}],
+      "orderItems": [
+        {"orderLine": 0,
+          "product": {"id": "1004100","name": "Men’s Thunder Jacket"},"location": {"type": "Store","id": "s1"},"delivery": {"method": "Shipment","shipment": {"date": "2018-08-18","carrier": "FedEx","trackingNumber": "t123455"}},"quantity": {"ordered": 1},"pricing": {"itemAmount": 20,"totalAmount": 20}},
+        {"orderLine": 0,
+          "product": {"id": "502101","name": "Alpine product"},"location": {"type": "Store","id": "s1"},"delivery": {"method": "Pickup","pickup": {"date": "2018-08-18","authorizedPeople": [{"firstName": "Brett","lastName": "Roeder","phoneNumber": "415-030-2033"}]}},"quantity": {"ordered": 4},"pricing": {"itemAmount": 20,"totalAmount": 20}}
+      ]}]
+    }
+  assert [
+    $.response.status mustEqual 201, // <--- Then a status assertion
+    $.response.mime mustEqual "application/json", // <--- And a MIME type assertion
+    $.response.body.messages[0].itemId?
+  ] execute [
+    context.set('sap-commdix-order-id', $.response.body.messages[0].itemId),
+    log($.response)
+  ],
+  /* Test get SAP order */
+  GET `$(api_endpoint)/orders/$(context.get('sap-order-id'))`
+  with {
+    headers: header().headers
+  }
+  assert [
+    $.response.status mustEqual 200, // <--- Then a status assertion
+    $.response.mime mustEqual "application/json", // <--- And a MIME type assertion
+    $.response.body.orderItems?,
+    sizeOf($.response.body.orderItems) == 1
+  ] execute [
+    log($.response)
+  ],
+  /* Test get CommDix order */
+  GET `$(api_endpoint)/orders/$(context.get('commdix-order-id'))`
+  with {
+    headers: header().headers
+  }
+  assert [
+    $.response.status mustEqual 200, // <--- Then a status assertion
+    $.response.mime mustEqual "application/json", // <--- And a MIME type assertion
+    $.response.body.orderItems?,
+    sizeOf($.response.body.orderItems) == 1
+  ] execute [
+    log($.response)
+  ],
+  /* Test get SAP-CommDix order  */
+  GET `$(api_endpoint)/orders/$(context.get('sap-commdix-order-id'))`
+  with {
+    headers: header().headers
+  }
+  assert [
+    $.response.status mustEqual 200, // <--- Then a status assertion
+    $.response.mime mustEqual "application/json", // <--- And a MIME type assertion
+    $.response.body.orderItems?,
+    sizeOf($.response.body.orderItems) == 2
+  ] execute [
+    log($.response)
+  ]  
+]
