@@ -10,3 +10,5 @@ commdix:
   port: "443"
   basePath: "/api"
   protocol: "HTTPS"
+order:
+  fromId: "0"

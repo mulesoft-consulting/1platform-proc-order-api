@@ -244,20 +244,26 @@ attributes.queryParams.customerId]]></ee:set-variable>
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 var orders = (payload."0".payload.orders default []) ++ (payload."1".payload.orders default [])
-var grupedOrders = (orders groupBy ($.orderId as Number)) pluck $
+var filteredOrders = orders filter (($.orderId as Number) > (p("order.fromId") as Number))
+var grupedOrders = (filteredOrders groupBy ($.orderId as Number)) pluck $
+fun resetOrderLine(items) = items map (
+	($ - "orderLine") ++ { orderLine: $$}
+)
 var mergedOrders = grupedOrders map
 ((orderPack, index) -> 
     if(sizeOf(orderPack) > 1)  
         {
         		orderId: orderPack[0].orderId as Number as String {format: "0000000000"},
 			sourceSystem: orderPack.*sourceSystem joinBy ", ",
-			orderItems: flatten(orderPack.*orderItems)
+			orderItems: resetOrderLine(flatten(orderPack.*orderItems))
 		} ++ (orderPack[0] - "orderId"- "orderItems" - "sourceSystem") 
     else 
     		{ orderId: orderPack[0].orderId as Number as String {format: "0000000000"} }
         ++ (orderPack[0] - "orderId")
         
 )
+
+
 ---
 {
 	meta: {
@@ -279,20 +285,17 @@ var mergedOrders = grupedOrders map
 			<scatter-gather doc:name="Scatter-Gather" doc:id="d22c3766-6655-410d-847a-8f977a060b68">
 			<route>
 				<flow-ref doc:name="get-commdix-order" doc:id="282cfacf-aa30-4f7c-ba9a-145e02bc935e" name="get-commdix-order" />
-				<logger level="INFO" doc:name="A" doc:id="f5db908a-3420-4c16-9e6a-417dabe99672" message="a" />
 			</route>
 			<route>
 				<flow-ref doc:name="get-sap-order" doc:id="8f501d17-a470-4140-ae99-a61be84174fe" name="get-sap-order" />
-				<logger level="INFO" doc:name="B" doc:id="716dccc0-9026-412a-84a4-45ec44fc2f1a" message="b" />
 			</route>
 		</scatter-gather>
 			<error-handler >
 				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="00c8d8ee-999b-438e-8778-45f8b2aed21e" >
-					<logger level="ERROR" doc:name="E" doc:id="0b5122e1-b656-4fea-9ba6-90627c528fea" message="e"/>
+					<logger level="ERROR" doc:name="Not handled error" doc:id="0b5122e1-b656-4fea-9ba6-90627c528fea" message="Not handled error"/>
 				</on-error-continue>
 			</error-handler>
 		</try>
-		<logger level="INFO" doc:name="F" doc:id="3360e08a-33e5-406c-927b-a7dd25a3ab19"/>
 		<ee:transform doc:name="Create Response" doc:id="13d145a5-fe70-4a5f-9e54-cdc43198e87e" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -312,18 +315,21 @@ var items:Array<Object> = commdixItems ++ sapItems
 var sources = (if (hasCommDixOrder) [payload."0".payload.sourceSystem] else []) 
 	++ ( if (hasSapOrder) [payload."1".payload.sourceSystem] else [])
 
+fun resetOrderLine(items) = items map (
+	($ - "orderLine") ++ { orderLine: $$}
+)
 ---
 if (mainOrder != null)
 	(mainOrder default {}) - "orderItems" - "sourceSystem" ++ {
 		sourceSystem: sources joinBy ", ",
-		orderItems: items
+		orderItems: resetOrderLine(items)
 	}
 else 
 	{
 	  "messageId": "",
 	  "itemId": vars.id,
 	  "severity": "ERROR",
-	  "code": "401",
+	  "code": "404",
 	  "description": "Not Found"
 	}]]></ee:set-payload>
 			</ee:message>
@@ -337,14 +343,12 @@ var hasSapOrder = not (vars.sapNotFound default false)
 if(hasCommDixOrder or hasSapOrder)
 	200
 else
-	401]]></ee:set-variable>
+	404]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<logger level="INFO" doc:name="G" doc:id="d2aa301e-81b8-4257-9e6a-a0c60687dc4e" message="g"/>
     </flow>
     <flow name="get-commdix-order" doc:id="2a949c76-c92f-4165-8b57-c36dbbb8fb69" >
 		<order-apifor-comm-dix-my-sql:get doc:name="Get CommDix Order" doc:id="221e338f-2b97-49ce-8855-33a08c089a33" config-ref="Order_API_for_CommDix_MySQL_Config" id="#[vars.id as Number]" />
-		<logger level="INFO" doc:name="C" doc:id="795808fa-fdab-4d97-9f84-8735059a39be" message="c"/>
 		<error-handler >
 			<on-error-continue enableNotifications="false" logException="false" doc:name="On Error Continue" doc:id="9dd401a2-88a4-40e2-9836-c1467b974935" type="ORDER-APIFOR-COMM-DIX-MY-SQL:NOT_FOUND">
 							<ee:transform doc:name="Set Not Found" doc:id="ce9847d3-d725-414b-9016-04a1a1cf352f">
@@ -361,13 +365,12 @@ output application/java
 true]]></ee:set-variable>
 								</ee:variables>
 							</ee:transform>
-				<logger level="INFO" doc:name="commdix error" doc:id="65f800b1-71a9-4d92-a589-976b323d1cdc" message="commdix error"/>
+				<logger level="DEBUG" doc:name="commdix error" doc:id="65f800b1-71a9-4d92-a589-976b323d1cdc" message="Not found in CommDix" category="app"/>
 						</on-error-continue>
 		</error-handler>
 	</flow>
 	<flow name="get-sap-order" doc:id="2828a92d-e31d-4979-9d56-232b9900700a" >
 		<order-sapapi:get doc:name="Get SAP Order" doc:id="b9424177-5c51-4480-a968-f476a47b58fa" config-ref="Order_SAP_API_Config" id='#[vars.id as Number as String {format: "0000000000"}]' />
-		<logger level="INFO" doc:name="D" doc:id="565746fb-b9c6-46be-a668-d5fc0b9d8653" message="d"/>
 		<error-handler >
 			<on-error-continue enableNotifications="false" logException="false" doc:name="On Error Continue" doc:id="397774db-3b22-4974-a334-351b6ecedc77" type="ORDER-SAPAPI:NOT_FOUND">
 							<ee:transform doc:name="Set Not Found" doc:id="c55f1e00-f6df-4789-bef5-122a24eff4ec">
@@ -384,7 +387,7 @@ output application/java
 true]]></ee:set-variable>
 								</ee:variables>
 							</ee:transform>
-				<logger level="INFO" doc:name="sap error" doc:id="a0cf8941-6c82-449a-b840-e929cb59f73d" message="sap error"/>
+				<logger level="DEBUG" doc:name="Not found in SAP" doc:id="a0cf8941-6c82-449a-b840-e929cb59f73d" message="Not found in SAP" category="app"/>
 						</on-error-continue>
 		</error-handler>
 	</flow>
