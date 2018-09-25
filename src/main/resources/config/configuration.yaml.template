@@ -1,0 +1,15 @@
+api:
+  id:
+sap:
+  protocol: 
+  host: 
+  port: 
+  basePath: 
+  protocol: 
+commdix:
+  host: 
+  port: 
+  basePath: 
+  protocol: 
+order:
+  fromId: 
