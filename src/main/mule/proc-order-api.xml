@@ -15,16 +15,16 @@ http://www.mulesoft.org/schema/mule/order-sapapi http://www.mulesoft.org/schema/
 ">
 
     <http:listener-config name="order-api-spec-httpListenerConfig">
-        <http:listener-connection host="0.0.0.0" port="8082" protocol="HTTPS">
+        <http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS">
             <tls:context>
-                <tls:key-store alias="localhost" type="jks" path="localhost.jks" keyPassword="${secure::keystore.password}" password="${secure::keystore.password}" />
+                <tls:key-store type="jks" path="${keystore.path}" keyPassword="${keystore.password}" password="${keystore.password}" />
             </tls:context>
         </http:listener-connection>
     </http:listener-config>	
 
     <apikit:config name="order-api-spec-config" raml="order-api-spec.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus"/>
-    <order-apifor-comm-dix-my-sql:config name="Order_API_for_CommDix_MySQL_Config" doc:name="Order API for CommDix MySQL Config" doc:id="bcb83043-1fa2-42f5-898d-f0d9d80f0012" property_host="${commdix.host}" property_port="${commdix.port}" property_basePath="${commdix.basePath}" property_protocol="${commdix.protocol}" property_client-id="${secure::commdix.clientId}" property_client-secret="${secure::commdix.clientSecret}" />
-	<order-sapapi:config name="Order_SAP_API_Config" doc:name="Order SAP API Config" doc:id="ef8df3b9-dede-44e9-9764-3bed2eff2ee7" property_host="${sap.host}" property_port="${sap.port}" property_basePath="${sap.basePath}" property_protocol="${sap.protocol}" property_client-id="${secure::sap.clientId}" property_client-secret="${secure::sap.clientSecret}" />
+    <order-apifor-comm-dix-my-sql:config name="Order_API_for_CommDix_MySQL_Config" doc:name="Order API for CommDix MySQL Config" doc:id="bcb83043-1fa2-42f5-898d-f0d9d80f0012" property_host="${commdix.host}" property_port="${commdix.port}" property_basePath="${commdix.basePath}" property_protocol="${commdix.protocol}" property_client-id="${app.client_id}" property_client-secret="${app.client_secret}" />
+	<order-sapapi:config name="Order_SAP_API_Config" doc:name="Order SAP API Config" doc:id="ef8df3b9-dede-44e9-9764-3bed2eff2ee7" property_host="${sap.host}" property_port="${sap.port}" property_basePath="${sap.basePath}" property_protocol="${sap.protocol}" property_client-id="${app.client_id}" property_client-secret="${app.client_secret}" />
 	<flow name="order-api-spec-main">
         <http:listener config-ref="order-api-spec-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -229,6 +229,13 @@ output application/java
 output application/java
 ---
 attributes.queryParams.customerId]]></ee:set-variable>
+				<ee:set-variable variableName="pagination" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	offset: (attributes.queryParams.pagingOffset default 0) as Number,
+	limit: (attributes.queryParams.maxResultsdefault default 10) as Number
+}]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<scatter-gather doc:name="Scatter-Gather" doc:id="2698fb39-93ca-4cfe-b571-38e65ed750a1" >
@@ -249,7 +256,10 @@ var grupedOrders = (filteredOrders groupBy ($.orderId as Number)) pluck $
 fun resetOrderLine(items) = items map (
 	($ - "orderLine") ++ { orderLine: $$}
 )
-var mergedOrders = grupedOrders map
+var start = (vars.pagination.offset * vars.pagination.limit)
+var tmpend = ((vars.pagination.offset + 1) * vars.pagination.limit) - 1
+var end = if(sizeOf(grupedOrders) > tmpend) tmpend else sizeOf(grupedOrders) - 1
+var mergedOrders = grupedOrders[start to end] map
 ((orderPack, index) -> 
     if(sizeOf(orderPack) > 1)  
         {
@@ -267,10 +277,11 @@ var mergedOrders = grupedOrders map
 ---
 {
 	meta: {
-		totalItems: sizeOf( mergedOrders ),
-		pagingOffset: 0
+		totalItems: sizeOf( grupedOrders ),
+		pagingOffset: vars.pagination.offset,
+		pagingLimit: vars.pagination.limit
 	},
-	orders:  mergedOrders 
+	orders:  mergedOrders default []
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>

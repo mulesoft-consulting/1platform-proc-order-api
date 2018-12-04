@@ -1,15 +1,27 @@
-api:
-  id:
+https:
+  port:
+  
+app:
+  autodiscovery:
+  client_id:
+  client_secret:
+  
 sap:
-  protocol: 
   host: 
   port: 
   basePath: 
-  protocol: 
+  protocol:
+   
 commdix:
   host: 
   port: 
   basePath: 
   protocol: 
+    
 order:
   fromId: 
+    
+keystore:
+  path:
+  password:
+
