@@ -252,7 +252,8 @@ output application/java
 output application/json
 var orders = (payload."0".payload.orders default []) ++ (payload."1".payload.orders default [])
 var filteredOrders = orders filter (($.orderId as Number) > (p("order.fromId") as Number))
-var grupedOrders = (filteredOrders groupBy ($.orderId as Number)) pluck $
+// returns ordered by orderId desc, the last 10 by default
+var grupedOrders = (filteredOrders groupBy ($.orderId as Number)) pluck $ orderBy(-$[0].orderId as Number)
 fun resetOrderLine(items) = items map (
 	($ - "orderLine") ++ { orderLine: $$}
 )
