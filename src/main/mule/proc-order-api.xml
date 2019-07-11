@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
-xmlns:order-sapapi="http://www.mulesoft.org/schema/mule/order-sapapi"
+<mule xmlns:custom-metrics="http://www.mulesoft.org/schema/mule/custom-metrics"
+xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+xmlns:tls="http://www.mulesoft.org/schema/mule/tls" 
+xmlns:order-sapapi="http://www.mulesoft.org/schema/mule/order-sapapi" 
 xmlns:order-apifor-comm-dix-my-sql="http://www.mulesoft.org/schema/mule/order-apifor-comm-dix-my-sql" 
 xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" 
 xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" 
 xmlns="http://www.mulesoft.org/schema/mule/core" 
 xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" 
-xmlns:http="http://www.mulesoft.org/schema/mule/http" 
-xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/order-apifor-comm-dix-my-sql http://www.mulesoft.org/schema/mule/order-apifor-comm-dix-my-sql/current/mule-order-apifor-comm-dix-my-sql.xsd
 http://www.mulesoft.org/schema/mule/order-sapapi http://www.mulesoft.org/schema/mule/order-sapapi/current/mule-order-sapapi.xsd
-">
+
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/custom-metrics http://www.mulesoft.org/schema/mule/custom-metrics/current/mule-custom-metrics.xsd">
 
     <http:listener-config name="order-api-spec-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS">
@@ -418,6 +420,14 @@ var commdixItems = payload[0].orderItems filter (item,i) -> (commDixIds contains
 	sap: sapItems,
 	commdix: commdixItems,
 }]]></ee:set-variable>
+				<ee:set-variable variableName="originalPayload" ><![CDATA[%dw 2.0
+output application/java
+---
+payload[0]]]></ee:set-variable>
+				<ee:set-variable variableName="sourceChannel" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.headers."source-channel" default "MOBILE")]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<choice doc:name="Has SAP items" doc:id="91f4a150-1442-4f85-978a-d7d334eed212" >
@@ -465,9 +475,33 @@ output application/json
 				<logger level="INFO" doc:name="Logger" doc:id="58e2802c-4b17-4026-9eb7-62db7051b03a" message="Not Creating Order in CommDix" category="app"/>
 			</otherwise>
 		</choice>
-		<ee:transform doc:name="Transform Message" doc:id="1c0ab68b-401d-45d7-89dd-f5344be2150c" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
+		<scatter-gather doc:name="Scatter-Gather" doc:id="b52adb9b-9793-46ff-99ed-465332ee5c1b" >
+			<route >
+				<tracking:custom-event doc:name="Custom Business Event" doc:id="75deb722-c726-4708-b019-e2407b9d8d25" event-name="New Order">
+					<tracking:meta-data key="customerId" value="#[vars.originalPayload.customerId]" />
+					<tracking:meta-data key="totalAmount" value="#[vars.originalPayload.totalAmount]" />
+					<tracking:meta-data key="totalProductQuantity" value="#[vars.originalPayload.total]" />
+					<tracking:meta-data key="dateTime" value="#[vars.originalPayload.orderDateTime]" />
+					<tracking:meta-data key="channel" value="#[vars.sourceChannel]" />
+				</tracking:custom-event>
+			</route>
+			<route >
+				<custom-metrics:send doc:name="Send Custom Metric" doc:id="032c1a14-183a-4e9b-9f9f-361b81cab5be" metricName="NTO_Order">
+					<custom-metrics:dimensions >
+						<custom-metrics:dimension dimensionName="customer_id" value="#[vars.originalPayload.customerId]" />
+						<custom-metrics:dimension dimensionName="channel" value="#[vars.sourceChannel]" />
+						<custom-metrics:dimension dimensionName="currency" value='#[vars.originalPayload.currency.code default "USD"]' />
+					</custom-metrics:dimensions>
+					<custom-metrics:facts >
+						<custom-metrics:fact factName="total_amount" value="#[vars.originalPayload.totalAmount as Number]" />
+						<custom-metrics:fact factName="total_products_quantity" value="#[sum(vars.originalPayload.orderItems.quantity.ordered) default 0 as Number]" />
+					</custom-metrics:facts>
+				</custom-metrics:send>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="1c0ab68b-401d-45d7-89dd-f5344be2150c">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 if (vars.sapResponse.messages[0].itemId?)
