@@ -262,6 +262,17 @@ payload.productNumber]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</flow>
+	<flow name="lookup_product_sap_id" doc:id="accc1b97-689c-41e7-88db-08b841b9e7bf" >
+		<product-ap-ifor-sap:get-products doc:name="Get products" doc:id="4e6cca75-7a63-44aa-bd7a-a9e4690b6466" product-number="#[payload]" config-ref="Product_API_for_SAP_Config"/>
+		<ee:transform doc:name="Return only the SAP ID" doc:id="b936b9b4-4dae-416f-a978-a5d75cc63164" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.products[0].id]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
 	<flow name="get:\orders:order-api-spec-config">
 		<ee:transform doc:name="Set Customer Id" doc:id="d75d3934-0479-43fb-b7d3-a3af605a1e0b" >
 			<ee:message >
@@ -549,12 +560,22 @@ output application/java
 output application/json
 ---
 [
-	(payload[0] - "orderItems") ++ {
-		orderItems: vars.systems.sap
+	(payload[0] - "orderItems" - "customerId") ++ {
+		orderItems: vars.systems.sap map (
+			($ - "product") ++ 
+			{
+				product: {
+					//name: $.product.name,
+					id: lookup('lookup_product_sap_id', $.product.id, 5000)
+				}
+			}
+		),
+		customerId: lookup('lookup_customer_sap_id', payload[0].customerId, 5000)
 	}
 ]]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="08f95991-7762-4891-a5ec-8c2248f88227" message="#[output application/json ---vars.sapRequest]"/>
 				<order-sapapi:post doc:name="Create Order in SAP" doc:id="a1afe7f6-0cdd-4c68-a719-0c01cac2caf5" config-ref="Order_SAP_API_Config" target="sapResponse">
 			<order-sapapi:post-request-data><![CDATA[#[vars.sapRequest]]]></order-sapapi:post-request-data>
 		</order-sapapi:post>
@@ -619,6 +640,26 @@ else
 	payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="497d8b5e-45d8-4522-a53f-b738e066c712" >
+				<ee:transform doc:name="Transform Message" doc:id="64d85940-dd43-4631-9f21-f839a0ea3897" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Unknown error"
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
     </flow>
 	<flow name="get-commdix-product-ids" doc:id="2b559d9a-b05d-4676-abdd-da0ddb48e1b0" >
 		<ee:transform doc:name="CommDix IDs" doc:id="35b9155f-093b-4239-ac14-03616869824e" >
