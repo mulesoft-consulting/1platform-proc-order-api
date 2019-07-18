@@ -1,27 +1,38 @@
 https:
-  port:
+  port: "8082"
   
 app:
-  autodiscovery:
-  client_id:
-  client_secret:
+  autodiscovery: ""
+  client_id: ""
+  client_secret: ""
   
 sap:
-  host: 
-  port: 
-  basePath: 
-  protocol:
+  order:
+    host: ""
+    port: ""
+    basePath: ""
+    protocol: ""
+  product:
+    host: "" 
+    port: ""
+    basePath: ""
+    protocol: ""
+  customer:
+    host: ""
+    port: ""
+    basePath: ""
+    protocol: ""
    
 commdix:
-  host: 
-  port: 
-  basePath: 
-  protocol: 
-    
+  host: "" 
+  port: ""
+  basePath: ""
+  protocol: ""
+  
 order:
-  fromId: 
-    
+  fromId: ""
+  
 keystore:
-  path:
-  password:
+  path: ""
+  password: ""
 

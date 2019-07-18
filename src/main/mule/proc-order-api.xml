@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:custom-metrics="http://www.mulesoft.org/schema/mule/custom-metrics"
-xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+<mule 
+xmlns:customer-ap-ifor-sap="http://www.mulesoft.org/schema/mule/customer-ap-ifor-sap"
+xmlns:product-ap-ifor-sap="http://www.mulesoft.org/schema/mule/product-ap-ifor-sap"
+xmlns:custom-metrics="http://www.mulesoft.org/schema/mule/custom-metrics" 
+xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" 
 xmlns:tls="http://www.mulesoft.org/schema/mule/tls" 
 xmlns:order-sapapi="http://www.mulesoft.org/schema/mule/order-sapapi" 
 xmlns:order-apifor-comm-dix-my-sql="http://www.mulesoft.org/schema/mule/order-apifor-comm-dix-my-sql" 
@@ -8,13 +11,15 @@ xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
 xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" 
 xmlns="http://www.mulesoft.org/schema/mule/core" 
 xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" 
-xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+xmlns:http="http://www.mulesoft.org/schema/mule/http" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/order-apifor-comm-dix-my-sql http://www.mulesoft.org/schema/mule/order-apifor-comm-dix-my-sql/current/mule-order-apifor-comm-dix-my-sql.xsd
 http://www.mulesoft.org/schema/mule/order-sapapi http://www.mulesoft.org/schema/mule/order-sapapi/current/mule-order-sapapi.xsd
-
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
-http://www.mulesoft.org/schema/mule/custom-metrics http://www.mulesoft.org/schema/mule/custom-metrics/current/mule-custom-metrics.xsd">
+http://www.mulesoft.org/schema/mule/custom-metrics http://www.mulesoft.org/schema/mule/custom-metrics/current/mule-custom-metrics.xsd
+http://www.mulesoft.org/schema/mule/product-ap-ifor-sap http://www.mulesoft.org/schema/mule/product-ap-ifor-sap/current/mule-product-ap-ifor-sap.xsd
+http://www.mulesoft.org/schema/mule/customer-ap-ifor-sap http://www.mulesoft.org/schema/mule/customer-ap-ifor-sap/current/mule-customer-ap-ifor-sap.xsd">
 
     <http:listener-config name="order-api-spec-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="${https.port}" protocol="HTTPS">
@@ -26,7 +31,9 @@ http://www.mulesoft.org/schema/mule/custom-metrics http://www.mulesoft.org/schem
 
     <apikit:config name="order-api-spec-config" raml="order-api-spec.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus"/>
     <order-apifor-comm-dix-my-sql:config name="Order_API_for_CommDix_MySQL_Config" doc:name="Order API for CommDix MySQL Config" doc:id="bcb83043-1fa2-42f5-898d-f0d9d80f0012" property_host="${commdix.host}" property_port="${commdix.port}" property_basePath="${commdix.basePath}" property_protocol="${commdix.protocol}" property_client-id="${app.client_id}" property_client-secret="${app.client_secret}" />
-	<order-sapapi:config name="Order_SAP_API_Config" doc:name="Order SAP API Config" doc:id="ef8df3b9-dede-44e9-9764-3bed2eff2ee7" property_host="${sap.host}" property_port="${sap.port}" property_basePath="${sap.basePath}" property_protocol="${sap.protocol}" property_client-id="${app.client_id}" property_client-secret="${app.client_secret}" />
+	<order-sapapi:config name="Order_SAP_API_Config" doc:name="Order SAP API Config" doc:id="ef8df3b9-dede-44e9-9764-3bed2eff2ee7" property_host="${sap.order.host}" property_port="${sap.order.port}" property_basePath="${sap.order.basePath}" property_protocol="${sap.order.protocol}" property_client-id="${app.client_id}" property_client-secret="${app.client_secret}" />
+	<product-ap-ifor-sap:config name="Product_API_for_SAP_Config" doc:name="Product API for SAP Config" doc:id="1aa0e83d-2316-4069-93cc-ed0d634178ad" property_host="${sap.product.host}" property_port="${sap.product.port}" property_basePath="${sap.product.basePath}" property_protocol="${sap.product.protocol}" property_client-id="${app.client_id}" property_client-secret="${app.client_secret}"/>
+	<customer-ap-ifor-sap:config name="Customer_API_for_SAP_Config" doc:name="Customer API for SAP Config" doc:id="abaf498d-33dc-456c-abba-fcc7f211a60d" property_host="${sap.customer.host}" property_port="${sap.customer.port}" property_basePath="${sap.customer.basePath}" property_protocol="${sap.customer.protocol}" property_client-id="${app.client_id}" property_client-secret="${app.client_secret}" />
 	<flow name="order-api-spec-main">
         <http:listener config-ref="order-api-spec-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -222,7 +229,40 @@ output application/java
 			</ee:variables>
 		</ee:transform>
     </flow>
-    <flow name="get:\orders:order-api-spec-config">
+    <flow name="lookup_customer_sap_id" doc:id="198cfd1d-ea02-43fe-a9f6-b6b3dc81e7d3" >
+		<customer-ap-ifor-sap:get-customers doc:name="Get customers" doc:id="4906c5f4-66bb-4172-88c9-7838a6918127" number="#[payload]" config-ref="Customer_API_for_SAP_Config"/>
+		<ee:transform doc:name="Return only the SAP ID" doc:id="08de52e2-60c1-479e-81d2-f057d8c34dee" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.customers[0].id]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="lookup_customer_domain_id" doc:id="784a6f51-1f55-4229-8490-2b2981fb845b" >
+		<customer-ap-ifor-sap:get-customer-by-id doc:name="Get customer by ID" doc:id="2acd4564-a910-4c45-b808-894f8d2c0548" id="#[payload]" config-ref="Customer_API_for_SAP_Config"/>
+		<ee:transform doc:name="Return only the Domain ID" doc:id="d9bc71cf-a43e-4eaf-815b-5668cb663ec5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.number]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="lookup_product_domain_id" doc:id="bf10b4e1-ca4a-4d36-9799-eb382d9d24b0" >
+		<product-ap-ifor-sap:get-product-by-id doc:name="Get product by ID" doc:id="71b069b2-edd8-4361-9abc-0c16da862d54" config-ref="Product_API_for_SAP_Config" id="#[payload]"/>
+		<ee:transform doc:name="Return only the Domain ID" doc:id="5117ca4c-9f51-45d7-8242-62902338cfb5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload.productNumber]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get:\orders:order-api-spec-config">
 		<ee:transform doc:name="Set Customer Id" doc:id="d75d3934-0479-43fb-b7d3-a3af605a1e0b" >
 			<ee:message >
 			</ee:message>
@@ -238,6 +278,10 @@ output application/java
 	offset: (attributes.queryParams.pagingOffset default 0) as Number,
 	limit: (attributes.queryParams.maxResultsdefault default 10) as Number
 }]]></ee:set-variable>
+				<ee:set-variable variableName="sapCustomerId" ><![CDATA[%dw 2.0
+output application/java
+---
+lookup('lookup_customer_sap_id', attributes.queryParams.customerId, 5000)]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<scatter-gather doc:name="Scatter-Gather" doc:id="2698fb39-93ca-4cfe-b571-38e65ed750a1" >
@@ -245,10 +289,40 @@ output application/java
 				<order-apifor-comm-dix-my-sql:get-orders doc:name="Get CommDix orders" doc:id="cc9255eb-af95-4653-8dae-d1a318c9ec7d" customer-id="#[vars.customerId]" config-ref="Order_API_for_CommDix_MySQL_Config"/>
 			</route>
 			<route >
-				<order-sapapi:get-orders doc:name="Get SAP orders" doc:id="7d983a74-a5bf-4904-9525-6776bbce141b" customer-id="#[vars.customerId]" config-ref="Order_SAP_API_Config"/>
+				<order-sapapi:get-orders doc:name="Get SAP orders" doc:id="870696a4-9fa0-4606-b5a3-69576e03af34" customer-id="#[vars.sapCustomerId]" config-ref="Order_SAP_API_Config"/>
+				<ee:transform doc:name="Transform Message getting Product Domain ID" doc:id="699941de-36c8-4ae3-ba78-daa32a9ccfb4" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	meta: payload.meta,
+	(if (payload.links != null) links: payload.links else null),
+	orders: payload.orders map (
+		($ - "orderItems") ++ 
+		orderItems: ($.orderItems map {
+			locationId: $.locationId,
+		    orderLine: $.orderLine,
+		    product: {
+		        id: lookup('lookup_product_domain_id',$.product.id, 5000)
+		    },
+		    quantity: {
+		        ordered: $.quantity.ordered,
+		        shipped: $.quantity.shipped
+		    },
+		    delivery: {
+		        method: $.delivery.method
+		    }
+		} default [])
+	)
+}
+
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
 			</route>
 		</scatter-gather>
-		<ee:transform doc:name="Transform Message" doc:id="5d19a533-1b3a-4548-bfa4-499281fa7555" >
+		<ee:transform doc:name="Set Response" doc:id="5d19a533-1b3a-4548-bfa4-499281fa7555" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -267,12 +341,16 @@ var mergedOrders = grupedOrders[start to end] map
     if(sizeOf(orderPack) > 1)  
         {
         		orderId: orderPack[0].orderId as Number as String {format: "0000000000"},
+        		customerId: vars.customerId,
 			sourceSystem: orderPack.*sourceSystem joinBy ", ",
 			orderItems: resetOrderLine(flatten(orderPack.*orderItems))
-		} ++ (orderPack[0] - "orderId"- "orderItems" - "sourceSystem") 
+		} ++ (orderPack[0] - "orderId"- "orderItems" - "sourceSystem" - "customerId") 
     else 
-    		{ orderId: orderPack[0].orderId as Number as String {format: "0000000000"} }
-        ++ (orderPack[0] - "orderId")
+    		{ 
+    			orderId: orderPack[0].orderId as Number as String {format: "0000000000"},
+    			customerId: vars.customerId
+    		}
+        ++ (orderPack[0] - "orderId" - "customerId")
         
 )
 
@@ -289,7 +367,7 @@ var mergedOrders = grupedOrders[start to end] map
 			</ee:message>
 		</ee:transform>
     </flow>
-    <flow name="get:\orders\(id):order-api-spec-config">
+	<flow name="get:\orders\(id):order-api-spec-config">
         <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" doc:id="838db775-ee3e-4a74-b3bb-6d206894c9e3" doc:name="Set Id">
             <ee:variables>
                 <ee:set-variable variableName="id"><![CDATA[attributes.uriParams.id]]></ee:set-variable>
@@ -310,6 +388,7 @@ var mergedOrders = grupedOrders[start to end] map
 				</on-error-continue>
 			</error-handler>
 		</try>
+		<logger level="INFO" doc:name="Logger" doc:id="b9728102-6654-4d88-bd15-6a3c5df5ad71" message="#[output application/json ---payload]"/>
 		<ee:transform doc:name="Create Response" doc:id="13d145a5-fe70-4a5f-9e54-cdc43198e87e" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -370,7 +449,7 @@ else
 						<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-""]]></ee:set-payload>
+{}]]></ee:set-payload>
 								</ee:message>
 								<ee:variables>
 									<ee:set-variable variableName="commDixNotFound"><![CDATA[%dw 2.0
@@ -385,6 +464,36 @@ true]]></ee:set-variable>
 	</flow>
 	<flow name="get-sap-order" doc:id="2828a92d-e31d-4979-9d56-232b9900700a" >
 		<order-sapapi:get doc:name="Get SAP Order" doc:id="b9424177-5c51-4480-a968-f476a47b58fa" config-ref="Order_SAP_API_Config" id='#[vars.id as Number as String {format: "0000000000"}]' />
+		<logger level="INFO" doc:name="Logger" doc:id="43ce3b62-9393-4b65-8ce9-7d3e5e50b9ce" message="#[output application/json ---payload]"/>
+		<ee:transform doc:name="Transform Message getting Product Domain ID" doc:id="244a30b9-2575-4bb6-922f-dafc5c7c9c69">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+
+---
+(payload - "orderItems" - "customerId") 
+	++ (orderItems: 
+			payload.orderItems map {
+				locationId: $.locationId,
+			    orderLine: $.orderLine,
+			    product: {
+			        id: lookup('lookup_product_domain_id',$.product.id, 5000)
+			    },
+			    quantity: {
+			        ordered: $.quantity.ordered,
+			        shipped: $.quantity.shipped
+			    },
+			    delivery: {
+			        method: $.delivery.method
+			    }
+			} default []
+	  )
+	++ (customerId: lookup('lookup_customer_domain_id', payload.customerId, 5000))
+	
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
 		<error-handler >
 			<on-error-continue enableNotifications="false" logException="false" doc:name="On Error Continue" doc:id="397774db-3b22-4974-a334-351b6ecedc77" type="ORDER-SAPAPI:NOT_FOUND">
 							<ee:transform doc:name="Set Not Found" doc:id="c55f1e00-f6df-4789-bef5-122a24eff4ec">
