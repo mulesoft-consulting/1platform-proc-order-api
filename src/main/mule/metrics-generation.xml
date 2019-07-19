@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="metrics-generationFlow" doc:id="5e940712-597f-4645-aa96-0aae732f1881" >
+		<http:listener doc:name="Listener" doc:id="97596527-3b96-4be6-838d-93596ae680e6" config-ref="order-api-spec-httpListenerConfig" path="/custom-metrics"/>
+		<ee:transform doc:name="Save Variables" doc:id="b14fb007-13da-4716-9e2f-5c97fe2dcc2d" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="originalPayload" ><![CDATA[%dw 2.0
+output application/java
+---
+payload[0]]]></ee:set-variable>
+				<ee:set-variable variableName="sourceChannel" ><![CDATA[%dw 2.0
+output application/java
+---
+(attributes.headers."source-channel" default "MOBILE")]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="Send Metrics" doc:id="a668f92e-705d-4585-a524-764c8d891f98" name="send-metrics"/>
+		<ee:transform doc:name="Transform Message" doc:id="7dc5ba9c-2e71-417f-be1a-a7e9b900f387" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	businessEvent: {
+		name: 'New Order',
+		keys: {
+			customerId: vars.originalPayload.customerId,
+			totalAmount: vars.originalPayload.totalAmount,
+			totalProductQuantity: sum(vars.originalPayload.orderItems.quantity.ordered) default 0 as Number,
+			dateTime: vars.originalPayload.orderDateTime default now(),
+			channel: vars.sourceChannel
+		}
+	},
+	customMetric: {
+		name: 'NTO_Order',
+		dimensions: {
+			customer_id: vars.originalPayload.customerId,
+			channel: vars.sourceChannel,
+			currency: vars.originalPayload.currency.code default "USD"
+			
+		},
+		facts: {
+			total_amount: vars.originalPayload.totalAmount as Number,
+			total_products_quantity: sum(vars.originalPayload.orderItems.quantity.ordered) default 0 as Number
+			
+		}
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

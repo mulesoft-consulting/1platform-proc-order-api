@@ -312,15 +312,23 @@ output application/java
 	orders: payload.orders map (
 		($ - "orderItems") ++ 
 		orderItems: ($.orderItems map {
-			locationId: $.locationId,
+			locationId: $.locationId  default "l1",
 		    orderLine: $.orderLine,
 		    product: {
 		        id: lookup('lookup_product_domain_id',$.product.id, 5000)
 		    },
 		    quantity: {
 		        ordered: $.quantity.ordered,
-		        shipped: $.quantity.shipped
+		        shipped: $.quantity.shipped default 0
 		    },
+		    pricing: {
+		    		itemAmount: $.pricing.itemAmount,
+	             discountedAmount: $.pricing.discountedAmount,
+	             totalAmount: $.pricing.totalAmount,
+	             currency: {
+	             	code: $.pricing.currency.code default "USD"
+	             }
+			},
 		    delivery: {
 		        method: $.delivery.method
 		    }
@@ -485,14 +493,22 @@ output application/java
 (payload - "orderItems" - "customerId") 
 	++ (orderItems: 
 			payload.orderItems map {
-				locationId: $.locationId,
+				locationId: $.locationId default "l1",
 			    orderLine: $.orderLine,
 			    product: {
 			        id: lookup('lookup_product_domain_id',$.product.id, 5000)
 			    },
 			    quantity: {
 			        ordered: $.quantity.ordered,
-			        shipped: $.quantity.shipped
+			        shipped: $.quantity.shipped default 0
+			    },
+			    pricing: {
+			    		itemAmount: $.pricing.itemAmount,
+                     discountedAmount: $.pricing.discountedAmount,
+                     totalAmount: $.pricing.totalAmount,
+                     currency: {
+                            code: $.pricing.currency.code default "USD"
+                     }
 			    },
 			    delivery: {
 			        method: $.delivery.method
@@ -525,6 +541,32 @@ true]]></ee:set-variable>
 						</on-error-continue>
 		</error-handler>
 	</flow>
+	<sub-flow name="send-metrics" doc:id="3bc76e1b-498a-4a5e-ac9e-768a9268cc96" >
+		<scatter-gather doc:name="Scatter-Gather" doc:id="b52adb9b-9793-46ff-99ed-465332ee5c1b">
+			<route>
+				<tracking:custom-event doc:name="Custom Business Event" doc:id="75deb722-c726-4708-b019-e2407b9d8d25" event-name="New Order">
+					<tracking:meta-data key="customerId" value="#[vars.originalPayload.customerId]" />
+					<tracking:meta-data key="totalAmount" value="#[vars.originalPayload.totalAmount]" />
+					<tracking:meta-data key="totalProductQuantity" value="#[sum(vars.originalPayload.orderItems.quantity.ordered) default 0 as Number]" />
+					<tracking:meta-data key="dateTime" value="#[vars.originalPayload.orderDateTime default now()]" />
+					<tracking:meta-data key="channel" value="#[vars.sourceChannel]" />
+				</tracking:custom-event>
+			</route>
+			<route>
+				<custom-metrics:send doc:name="Send Custom Metric" doc:id="032c1a14-183a-4e9b-9f9f-361b81cab5be" metricName="NTO_Order">
+					<custom-metrics:dimensions>
+						<custom-metrics:dimension dimensionName="customer_id" value="#[vars.originalPayload.customerId]" />
+						<custom-metrics:dimension dimensionName="channel" value="#[vars.sourceChannel]" />
+						<custom-metrics:dimension dimensionName="currency" value='#[vars.originalPayload.currency.code default "USD"]' />
+					</custom-metrics:dimensions>
+					<custom-metrics:facts>
+						<custom-metrics:fact factName="total_amount" value="#[vars.originalPayload.totalAmount as Number]" />
+						<custom-metrics:fact factName="total_products_quantity" value="#[sum(vars.originalPayload.orderItems.quantity.ordered) default 0 as Number]" />
+					</custom-metrics:facts>
+				</custom-metrics:send>
+			</route>
+		</scatter-gather>
+	</sub-flow>
 	<flow name="post:\orders:application\json:order-api-spec-config">
         <ee:transform doc:name="Items by System" doc:id="01c052d6-0181-4a2f-938c-c58eb2a68a38" >
 			<ee:message >
@@ -605,30 +647,7 @@ output application/json
 				<logger level="INFO" doc:name="Logger" doc:id="58e2802c-4b17-4026-9eb7-62db7051b03a" message="Not Creating Order in CommDix" category="app"/>
 			</otherwise>
 		</choice>
-		<scatter-gather doc:name="Scatter-Gather" doc:id="b52adb9b-9793-46ff-99ed-465332ee5c1b" >
-			<route >
-				<tracking:custom-event doc:name="Custom Business Event" doc:id="75deb722-c726-4708-b019-e2407b9d8d25" event-name="New Order">
-					<tracking:meta-data key="customerId" value="#[vars.originalPayload.customerId]" />
-					<tracking:meta-data key="totalAmount" value="#[vars.originalPayload.totalAmount]" />
-					<tracking:meta-data key="totalProductQuantity" value="#[vars.originalPayload.total]" />
-					<tracking:meta-data key="dateTime" value="#[vars.originalPayload.orderDateTime]" />
-					<tracking:meta-data key="channel" value="#[vars.sourceChannel]" />
-				</tracking:custom-event>
-			</route>
-			<route >
-				<custom-metrics:send doc:name="Send Custom Metric" doc:id="032c1a14-183a-4e9b-9f9f-361b81cab5be" metricName="NTO_Order">
-					<custom-metrics:dimensions >
-						<custom-metrics:dimension dimensionName="customer_id" value="#[vars.originalPayload.customerId]" />
-						<custom-metrics:dimension dimensionName="channel" value="#[vars.sourceChannel]" />
-						<custom-metrics:dimension dimensionName="currency" value='#[vars.originalPayload.currency.code default "USD"]' />
-					</custom-metrics:dimensions>
-					<custom-metrics:facts >
-						<custom-metrics:fact factName="total_amount" value="#[vars.originalPayload.totalAmount as Number]" />
-						<custom-metrics:fact factName="total_products_quantity" value="#[sum(vars.originalPayload.orderItems.quantity.ordered) default 0 as Number]" />
-					</custom-metrics:facts>
-				</custom-metrics:send>
-			</route>
-		</scatter-gather>
+		<flow-ref doc:name="Send Custom Metric" doc:id="d1095f7d-4e8d-4c00-b09c-57e4c0a8e9b1" name="send-metrics"/>
 		<ee:transform doc:name="Transform Message" doc:id="1c0ab68b-401d-45d7-89dd-f5344be2150c">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
