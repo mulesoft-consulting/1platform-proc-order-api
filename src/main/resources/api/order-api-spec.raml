@@ -1,17 +1,17 @@
 #%RAML 1.0
-title: Order API Spec
-baseUri: https://mocksvc.mulesoft.com/mocks/4f640aaa-d760-44dc-9447-926a1282177b/{version} # baseUri: http://localhost/{version}
-version: v1
+title: Order API
+baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/1bbb1f39-4619-40e1-a60e-23972f62a985/{version} # baseUri: http://localhost/{version}
+version: v3
 mediaType: [application/json, application/xml]
-securedBy: [passthrough]
+securedBy: [x-custom]
 securitySchemes: 
-  passthrough: !include /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/pass-through-security-scheme/1.0.0/pass-through-security-scheme.raml
+  x-custom: !include /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/client-credentials-security-scheme/1.0.3/client-credentials-security-scheme.raml
 
 description: This API spec design highlights the power of RAML. It reuses existing RAML fragments for dataTypes, traits, resourceTypes and more to simplify and accelerate definig an API Spec. Fragments also ENSURE CONSISTENCY acrosss APIs. With consistency comes acclerated delivery due to developers familiarity with the design fragments. Overlays and extensions are available if needed to modify the API fragments.  \nRAML allows you to define RAML DataTypes and RAML NamedExamples instead of defining a schema and example for JSON and another for schema and example for XML and then trying to keep them in sync. With RAML DataTypes and NamedExamples you can support JSON & XML from one DataType and one NamedExample.
 
 uses: 
   order: /exchange_modules/66234019-5a31-4239-ba28-4e6d70f0468a/order-library/2.0.3/order-library.raml
-  collectionRT: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/collection-library/1.0.30/collection-library.raml
+  collectionRT: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/collection-library/1.0.34/collection-library.raml
 
 annotationTypes: 
   order.Order:

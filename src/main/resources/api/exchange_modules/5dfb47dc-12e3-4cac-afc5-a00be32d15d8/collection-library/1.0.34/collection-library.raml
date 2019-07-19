@@ -4,10 +4,12 @@ usage: |
   collection - collection member patterns commonly found in RESTful APIs
   along with commonly used query parameters that are applied
   to collection queries to sort and page through result sets
+
+  also sets the default displayNames for each method
   
 uses:
   hyper: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/hypermedia-library/1.0.4/hypermedia-library.raml
-  common: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/common-library/1.0.11/common-library.raml
+  common: /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/common-library/1.0.12/common-library.raml
 
 types: 
   collectionTotalItems:
@@ -52,7 +54,6 @@ types:
 
 traits:
   headers: !include /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/rest-headers-trait/1.0.3/rest-headers-trait.raml
-  #client-id-secured: !include /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/client-id-secured-trait/1.0.1/client-id-secured-trait.raml
 
 resourceTypes:
   collection:
@@ -60,6 +61,7 @@ resourceTypes:
     description: |
       the collection of <<resourcePathName>>
     get?:
+      displayName: Get <<resourcePathName>>
       description: |
         query the collection of <<resourcePathName | !pluralize>>
         may include optional filtering and sorting criteria
@@ -79,63 +81,62 @@ resourceTypes:
             query on the collection of <<resourcePathName | !pluralize>>
             was successful
           body:
-            <<mediaType>>:
+            application/json:
               type: <<resourcePathName | !singularize>>.<<resourcePathName | !singularize | !uppercamelcase>>CollectionResponse
         400: &400responseBadRequest
           description: |
-            one or more query parameters was missing, invalid or malformed
+            one or more query parameters was missing, invalid or malformed. 
+            the &400responseBadRequest defines a resuable fragment for use throughout the API
+            below, you will reference this definition with &400responseBadRequest
           body:
-            <<mediaType>>:
+            application/json:
               type: common.Message
         500: &500responseInternalServerError
           description: |
             an internal error occurred that prevented the request from executing
           body:
-            <<mediaType>>:
+            application/json:
               type: common.Message
               example: !include /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/500-internal-server-error-response-ex/1.0.1/500-internal-server-error-response-ex.raml
 
     post?:
+      displayName: Post <<resourcePathName>>
       description: |
         create a new member of the collection of <<resourcePathName | !pluralize>>
         from a prototype object
-      body: &requestCollectionMemberPrototype
-        <<mediaType>>:
-          type: <<resourcePathName | !singularize>>.<<resourcePathName | !singularize | !uppercamelcase>>[]
-          #example: <<postRequestExample>>
-
+      body: 
+        application/json:
+          type: <<resourcePathName | !singularize>>.<<resourcePathName | !singularize | !uppercamelcase>>Collection
       responses:
         201: &201responseCreated
           description: |
             a new <<resourcePathName | !singularize>> was created
           body:
-            <<mediaType>>:
+            application/json:
               type: object
               properties:
                 meta?: CollectionResponseMetadata
                 links?: CollectionPagingLinks
                 messages:
                   type:  common.Message[]
-              example: !include examples/post-collection-response.raml
         202: &202responseAccepted
           description: |
             a new <<resourcePathName | !singularize>> was created
           body:
-            <<mediaType>>:
+            application/json:
               type: object
               properties:
                 meta?: CollectionResponseMetadata
                 links?: CollectionPagingLinks
                 messages:
                   type:  common.Message[]
-              example: !include examples/post-collection-response.raml
         400: *400responseBadRequest
         409: &409responseConflict
           description: |
             a new <<resourcePathName | !singularize>> was not created due to
             an attempt to violate a system constraint
           body:
-            <<mediaType>>:
+            application/json:
               type: common.Message
         500: *500responseInternalServerError
         
@@ -146,6 +147,7 @@ resourceTypes:
       of <<resourcePathName | !pluralize>>
 
     get?:
+      displayName: Get <<resourcePathName | !singularize>> by ID
       description: |
         retreive an individual <<resourcePathName | !singularize>>
       responses:
@@ -153,28 +155,28 @@ resourceTypes:
           description: |
             the <<resourcePathName | !singularize>> was found and retreived
           body:
-            <<mediaType>>:
+            application/json:
               type: <<resourcePathName | !singularize>>.<<resourcePathName | !singularize | !uppercamelcase>>
-              #example: <<getMemberResponseExample>>
     put?:
+      displayName: Put <<resourcePathName | !singularize>> by ID
       description: |
         modify an existing <<resourcePathName | !singularize>>
       body: 
-        <<mediaType>>:
+        application/json:
           type: <<resourcePathName | !singularize>>.<<resourcePathName | !singularize | !uppercamelcase>>
-          #example: <<getMemberResponseExample>>
       responses:
-        202: *202responseAccepted
+        204:
         400: *400responseBadRequest
         404: &404responseNotFound
           body: 
-            <<mediaType>>:
+            application/json:
               type: common.Message
               example: !include /exchange_modules/5dfb47dc-12e3-4cac-afc5-a00be32d15d8/404-not-found-response-example/1.0.0/404-not-found-response-example.raml
         409: *409responseConflict
         500: *500responseInternalServerError
     delete?:
+      displayName: Delete <<resourcePathName | !singularize>> by ID
       responses: 
-        202: *202responseAccepted
+        204:
         404: *404responseNotFound
         500: *500responseInternalServerError

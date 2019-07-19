@@ -4,7 +4,7 @@ pipeline {
   }
   environment {
     DEPLOY_CREDS = credentials('deploy-anypoint-user')
-    MULE_VERSION = '4.1.5'
+    MULE_VERSION = '4.2.0'
     BG = "1Platform\\Retail\\Sales"
     WORKER = "Small"
     APP_CLIENT_CREDS = credentials("$BRANCH_NAME-api-mgr-proc-order-api")
