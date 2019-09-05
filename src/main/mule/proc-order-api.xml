@@ -641,7 +641,7 @@ output application/json
 ]]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-				<order-apifor-comm-dix-my-sql:post doc:name="Create Order in CommDix" doc:id="f6cccf45-ad49-4516-a844-1cc9eaa75a44" config-ref="Order_API_for_CommDix_MySQL_Config" />
+				<order-apifor-comm-dix-my-sql:post doc:name="Create Order in CommDix" doc:id="f6cccf45-ad49-4516-a844-1cc9eaa75a44" config-ref="Order_API_for_CommDix_MySQL_Config" target="commdixResponse"/>
 			</when>
 			<otherwise >
 				<logger level="INFO" doc:name="Logger" doc:id="58e2802c-4b17-4026-9eb7-62db7051b03a" message="Not Creating Order in CommDix" category="app"/>
@@ -656,7 +656,7 @@ output application/json
 if (vars.sapResponse.messages[0].itemId?)
 	vars.sapResponse
 else
-	payload]]></ee:set-payload>
+	vars.commdixResponse]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 		<error-handler >
