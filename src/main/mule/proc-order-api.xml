@@ -287,7 +287,7 @@ output application/java
 ---
 {
 	offset: (attributes.queryParams.pagingOffset default 0) as Number,
-	limit: (attributes.queryParams.maxResultsdefault default 10) as Number
+	limit: (attributes.queryParams.maxResults default 10) as Number
 }]]></ee:set-variable>
 				<ee:set-variable variableName="sapCustomerId" ><![CDATA[%dw 2.0
 output application/java
@@ -348,7 +348,11 @@ output application/json
 var orders = (payload."0".payload.orders default []) ++ (payload."1".payload.orders default [])
 var filteredOrders = orders filter (($.orderId as Number) > (p("order.fromId") as Number))
 // returns ordered by orderId desc, the last 10 by default
-var grupedOrders = (filteredOrders groupBy ($.orderId as Number)) pluck $ orderBy(-$[0].orderId as Number)
+// var grupedOrders = (filteredOrders groupBy ($.orderId as Number)) pluck $ orderBy(-$[0].orderId as Number)
+// returns ordered by orderId asc, the last 10 by default
+var grupedOrders = (filteredOrders groupBy ($.orderId as Number)) pluck $ orderBy(-$[0].orderDateTime as DateTime as Number)
+var totalPackedOrders = sizeOf(grupedOrders filter (sizeOf($) > 1))
+var totalOrders = (payload."0".payload.meta.totalItems default 0) + (payload."1".payload.meta.totalItems default 0) - totalPackedOrders
 fun resetOrderLine(items) = items map (
 	($ - "orderLine") ++ { orderLine: $$}
 )
@@ -377,7 +381,7 @@ var mergedOrders = grupedOrders[start to end] map
 ---
 {
 	meta: {
-		totalItems: sizeOf( grupedOrders ),
+		totalItems: totalOrders,
 		pagingOffset: vars.pagination.offset,
 		pagingLimit: vars.pagination.limit
 	},
@@ -385,6 +389,24 @@ var mergedOrders = grupedOrders[start to end] map
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="56774c76-154d-4153-826a-a0a8011b5256" >
+				<ee:transform doc:name="Transform Message" doc:id="b976b56f-5ce0-42be-847a-84d8cd9562b8" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+error]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[%dw 2.0
+output application/java
+---
+500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
     </flow>
 	<flow name="get:\orders\(id):order-api-spec-config">
         <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" doc:id="838db775-ee3e-4a74-b3bb-6d206894c9e3" doc:name="Set Id">
